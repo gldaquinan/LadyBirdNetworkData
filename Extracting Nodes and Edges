@@ -8,10 +8,10 @@ import csv
 script_path = '/Users/gendaquinan/Ladybird/LADY_BIRD_shooting_script.pdf'
 script_document = fitz.open(script_path)
 
-# Function to clean the extracted text
+# Clean the extracted text
 def clean_text(text):
     text = re.sub(r'\n+', '\n', text)  # Replace multiple newlines with just one
-    text = re.sub(r'\s+\n', '\n', text)  # Remove whitespace before newline
+    text = re.sub(r'\s+\n', '\n', text)  # Removes whitespace before newline
     return text.strip()
 
 # Function to extract character names from the script
@@ -19,7 +19,7 @@ def extract_characters(text):
     character_regex = re.compile(r'^[A-Z ]{2,}(?=\n)', re.MULTILINE)
     return set(character_regex.findall(text))
 
-# Function to count character interactions
+# Function to count character interactions, 'INT' and 'EXT' are keywords that signal start and end of a scene
 def count_interactions(text, characters):
     interactions = defaultdict(int)
     scenes = text.split('INT.') + text.split('EXT.')  # Rough scene splitting
@@ -60,7 +60,7 @@ main_characters_info = {
     "Darlene Bell": 2   # Female
 }
 
-# Aliases for characters (to normalize different variations of names)
+# Aliases for characters (this is important to normalize different variations of names as LadyBird goes by Christine and Lady Bird)
 aliases = {
     'LADY BIRD': "Christine 'Lady Bird' McPherson",
     'CHRISTINE': "Christine 'Lady Bird' McPherson",
