@@ -4,6 +4,8 @@ This script performs an extraction of the nodes and edges data to perform a netw
 It identifies when two characters interact based on their co-presence in scenes and quantifies these interactions.
 Additionally, it assigns a gender to each character based on predefined information.
 
+The movie script used can be found here: https://www.dailyscript.com/scripts/LADY_BIRD_shooting_script.pdf
+
 Installation:
 
 You need Python 3 and the following packages: PyMuPDF, re, itertools, collections, and csv. 
@@ -21,4 +23,5 @@ The 'edges_data.csv' file will contain three columns: Source, Target, and Weight
 """
 
 Jupyter lab/notebook is recommended
+
 
