@@ -1,0 +1,118 @@
+import fitz  # PyMuPDF
+import itertools
+import re
+from collections import defaultdict
+import csv
+
+# Open the PDF file
+script_path = '/Users/gendaquinan/Ladybird/LADY_BIRD_shooting_script.pdf'
+script_document = fitz.open(script_path)
+
+# Function to clean the extracted text
+def clean_text(text):
+    text = re.sub(r'\n+', '\n', text)  # Replace multiple newlines with just one
+    text = re.sub(r'\s+\n', '\n', text)  # Remove whitespace before newline
+    return text.strip()
+
+# Function to extract character names from the script
+def extract_characters(text):
+    character_regex = re.compile(r'^[A-Z ]{2,}(?=\n)', re.MULTILINE)
+    return set(character_regex.findall(text))
+
+# Function to count character interactions
+def count_interactions(text, characters):
+    interactions = defaultdict(int)
+    scenes = text.split('INT.') + text.split('EXT.')  # Rough scene splitting
+    for scene in scenes:
+        present_characters = [char for char in characters if char in scene]
+        for char_pair in itertools.combinations(present_characters, 2):
+            interactions[char_pair] += 1
+    return interactions
+
+# Extract text from all pages and clean it
+full_script_text = ""
+for page_num in range(script_document.page_count):
+    page = script_document.load_page(page_num)
+    full_script_text += clean_text(page.get_text())
+
+# Extract characters and count interactions
+characters = extract_characters(full_script_text)
+interactions = count_interactions(full_script_text, characters)
+
+# Define the main characters and their genders
+main_characters_info = {
+    "Christine 'Lady Bird' McPherson": 2,  # Female
+    "Marion 'mom' 'mother' McPherson": 2,  # Female
+    "Larry 'dad' 'father' McPherson": 1,  # Male
+    "Daniel 'Danny' O'Neill": 1,  # Male
+    "Kyle Scheible": 1,  # Male
+    "Julianne 'Julie' Steffans": 2,  # Female
+    "Sister Sarah Joan": 2,  # Female
+    "Father Leviatch": 1,  # Male
+    "Jenna Walton": 2,  # Female
+    "Miguel McPherson": 1,  # Male
+    "Shelly Yuhan": 2,  # Female
+    "Mr. Bruno": 1,  # Male
+    "Greg Anrue": 1,  # Male
+    "Casey Kelly": 2,  # Female
+    "Diana Greenway": 2,  # Female
+    "Matt": 1,  # Male
+    "Darlene Bell": 2   # Female
+}
+
+# Aliases for characters (to normalize different variations of names)
+aliases = {
+    'LADY BIRD': "Christine 'Lady Bird' McPherson",
+    'CHRISTINE': "Christine 'Lady Bird' McPherson",
+    'MARION': "Marion 'mom' 'mother' McPherson",
+    'LARRY': "Larry 'dad' 'father' McPherson",
+    'DANNY': "Daniel 'Danny' O'Neill",
+    'KYLE': 'Kyle Scheible',
+    'JULIE': "Julianne 'Julie' Steffans",
+    'SISTER SARAH JOAN': 'Sister Sarah Joan',
+    'FATHER LEVIATCH': 'Father Leviatch',
+    'JENNA': 'Jenna Walton',
+    'MIGUEL': 'Miguel McPherson',
+    'SHELLY': 'Shelly Yuhan',
+    'MR. BRUNO': 'Mr. Bruno',
+    'GREG': 'Greg Anrue',
+    'CASEY': 'Casey Kelly',
+    'DIANA': 'Diana Greenway',
+    'MATT': 'Matt',
+    'DARLENE': 'Darlene Bell'
+}
+
+# Normalize the character names in the interactions dictionary
+normalized_interactions = defaultdict(int)
+for (char1, char2), count in interactions.items():
+    norm_char1 = aliases.get(char1, char1)
+    norm_char2 = aliases.get(char2, char2)
+    if norm_char1 in main_characters_info and norm_char2 in main_characters_info:
+        char_pair = tuple(sorted([norm_char1, norm_char2]))
+        normalized_interactions[char_pair] += count
+
+# Create nodes data
+nodes_data = [(i + 1, name, gender) for i, (name, gender) in enumerate(main_characters_info.items())]
+
+# Create edges data
+edges_data = [(i + 1, j + 1, normalized_interactions[(name1, name2)]) 
+              for i, (name1, _) in enumerate(main_characters_info.items()) 
+              for j, (name2, _) in enumerate(main_characters_info.items()) 
+              if (name1, name2) in normalized_interactions and i < j]
+
+# Write the nodes and edges data to CSV files
+def write_to_csv(file_path, header, data):
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(header)  # Write the header
+        writer.writerows(data)  # Write the data
+
+# Paths for the CSV files
+nodes_csv_path = '/Users/gendaquinan/Ladybird/nodes_data.csv'
+edges_csv_path = '//Users/gendaquinan/Ladybird/edges_data.csv'
+
+# Write the nodes and edges data to their respective CSV files
+write_to_csv(nodes_csv_path, ["Id", "Label", "Gender"], nodes_data)
+write_to_csv(edges_csv_path, ["Source", "Target", "Weight"], edges_data)
+
+(nodes_csv_path, edges_csv_path)
